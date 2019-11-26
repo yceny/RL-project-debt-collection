@@ -59,32 +59,40 @@ for loan_id in loan_ids2:
     traj = list(zip(states_index[:-1],actions, rewards, states_index[1:]))
     trajs2.append(traj)
 
-nA1 = trajs1_pd['action'].unique().shape[0]
+nA1 = trajs1_pd['action_num'].unique().shape[0]
 nS1 = trajs1_pd[['state_done', 'cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation']].drop_duplicates().shape[0]
+print('# of actions group 1: ', trajs1_pd['action_num'].unique())
 
-nA2 = trajs2_pd['action'].unique().shape[0]
+
+nA2 = trajs2_pd['action_num'].unique().shape[0]
 nS2 = trajs2_pd[['state_done', 'cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation']].drop_duplicates().shape[0]
+print('# of actions group 2  ', trajs2_pd['action_num'].unique())
+
 
 gamma = 1. # discount factor
 
 behavior_policy1 = RandomPolicy(nA1)
-sarsa_Q_star_est1, sarsa_pi_star_est1 = nsarsa(gamma,trajs1,behavior_policy1, nS = nS1, nA = nA1, n=1,alpha=0.005)
+sarsa_Q_star_est1, sarsa_reward1, sarsa_pi_star_est1 = nsarsa(gamma,trajs1,behavior_policy1, nS = nS1, nA = nA1, n=1,alpha=0.005)
 print('###########################################################################')
-print(sarsa_Q_star_est1)
-print('estimated policy is')
-print(sarsa_pi_star_est1)
+print(sarsa_Q_star_est1[-10:,-10:])
+# print(sarsa_reward1[-50:])
+# print('estimated policy is')
+# print(sarsa_pi_star_est1)
 
 behavior_policy2 = RandomPolicy(nA2)
-sarsa_Q_star_est2, sarsa_pi_star_est2 = nsarsa(gamma,trajs2,behavior_policy2, nS = nS2, nA = nA2, n=1,alpha=0.005)
+sarsa_Q_star_est2, sarsa_reward2, sarsa_pi_star_est2 = nsarsa(gamma,trajs2,behavior_policy2, nS = nS2, nA = nA2, n=1,alpha=0.005)
 print('###########################################################################')
-print(sarsa_Q_star_est2)
-print('estimated policy is')
-print(sarsa_pi_star_est2)
+print(sarsa_Q_star_est2[-10:,-10: ])
+# print(sarsa_reward2[-50:])
+# print('estimated policy is')
+# print(sarsa_pi_star_est2)
 
-qlearning1 = qlearning(trajs1, nS1, nA1, alpha = 0.4, gamma = 0.999, epsilon = 0.9)
+qlearning1, qLearning1_reward = qlearning(trajs1, nS1, nA1, alpha = 0.4, gamma = 0.999, epsilon = 0.9)
 print('###########################################################################')
-print(qlearning1)
-qlearning2 = qlearning(trajs2, nS2, nA2, alpha = 0.4, gamma = 0.999, epsilon = 0.9)
+print(qlearning1[-10:, -10:])
+# print(qLearning1_reward[-50:])
+qlearning2, qlearning2_reward = qlearning(trajs2, nS2, nA2, alpha = 0.4, gamma = 0.999, epsilon = 0.9)
 print('###########################################################################')
-print(qlearning2)
+print(qlearning2[-10:, -10:])
+# print(qlearning2_reward[-50:])
 
