@@ -7,6 +7,7 @@ import keras as K
 import numpy as np
 from keras.layers import Dense, Conv1D, Flatten, Dropout, BatchNormalization, Activation, MaxPooling1D
 from keras.models import Sequential
+from keras.models import load_model
 from keras.optimizers import SGD, Adadelta
 from keras.losses import mean_squared_error
 
@@ -105,11 +106,15 @@ df1_final['opt_action_qlearning'] = opt_action1_qlearning
 trajs1_pd_test = trajs1_pd_test.merge(df1_final, on = ['state_done', 'cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation'], how = 'left')
 print('shape of test data ', trajs1_pd_test.shape)
 
-trajs1_pd_test.dropna(how='any')
+trajs1_pd_test = trajs1_pd_test.dropna(how='any')
 print('shape of test data after drop na ', trajs1_pd_test.shape)
-print(trajs1_pd_test.columns.values)
+
+print('# of installment ', trajs1_pd_test[['loan_id','installment']].drop_duplicates().shape)
+print('# of loans ', trajs1_pd_test['loan_id'].drop_duplicates().shape)
+# print(trajs1_pd_test.columns.values)
 
 # estimate reward for sarsa
+print('######################### estimate reward for sarsa ###############################################')
 state_action_pairs = trajs1_pd_test[['gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation','state_done', 'cumulative_overdue_early_difference','opt_action_sarsa']].values
 rewards = trajs1_pd_test['reward'].values
 
@@ -128,15 +133,16 @@ rewards = (rewards - np.mean(rewards)) / np.std(rewards)
 
 model = cnn_model_fn()        
 state_action_pairs = np.reshape(state_action_pairs, (state_action_pairs.shape[0], state_action_pairs.shape[1], 1))
-model.load_weights('./' + '0-reg-0.0110.hdf5')
+model = load_model('./' + '0-reg-0.0594.hdf5')
 # no batch if predicting a single data
 pred = model.predict(state_action_pairs, batch_size=64)
 # final prediction, projected back to original reward scale
-pred_final = pred * 208.725478 + 88.320939
+pred_final = pred * np.std(rewards) + np.mean(rewards)
 
 trajs1_pd_test['est_reward_sarsa'] = pred_final
 
 # estimate reward for q learning
+print('######################### estimate reward for q learning ###############################################')
 state_action_pairs = trajs1_pd_test[['gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation','state_done', 'cumulative_overdue_early_difference','opt_action_qlearning']].values
 rewards = trajs1_pd_test['reward'].values
 
@@ -155,14 +161,44 @@ rewards = (rewards - np.mean(rewards)) / np.std(rewards)
 
 model = cnn_model_fn()        
 state_action_pairs = np.reshape(state_action_pairs, (state_action_pairs.shape[0], state_action_pairs.shape[1], 1))
-model.load_weights('./' + '0-reg-0.0110.hdf5')
+model = load_model('./' + '0-reg-0.0594.hdf5')
 # no batch if predicting a single data
 pred = model.predict(state_action_pairs, batch_size=64)
 # final prediction, projected back to original reward scale
-pred_final = pred * 208.725478 + 88.320939
+pred_final = pred * np.std(rewards) + np.mean(rewards)
 
 trajs1_pd_test['est_reward_qlearning'] = pred_final
 
+# actual reward under NN
+print('######################### reward under NN ###############################################')
+state_action_pairs = trajs1_pd_test[['gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation','state_done', 'cumulative_overdue_early_difference','action_num']].values
+rewards = trajs1_pd_test['reward'].values
+
+# feature standization
+for j in range(state_action_pairs.shape[1]):
+    mean = np.mean(state_action_pairs[:,j])
+    std = np.std(state_action_pairs[:,j])
+    print('mean, std of data column %d: %f %f' % (j, mean, std))
+    for i in range(state_action_pairs.shape[0]):
+        state_action_pairs[i,j] = (state_action_pairs[i,j] - mean) / std
+        
+# reward standizatioin
+print('mean, std of rewards: %f %f' % (np.mean(rewards), np.std(rewards)))   # 88, 209
+# reward standization
+rewards = (rewards - np.mean(rewards)) / np.std(rewards)
+
+model = cnn_model_fn()        
+state_action_pairs = np.reshape(state_action_pairs, (state_action_pairs.shape[0], state_action_pairs.shape[1], 1))
+model = load_model('./' + '0-reg-0.0594.hdf5')
+# no batch if predicting a single data
+pred = model.predict(state_action_pairs, batch_size=64)
+# final prediction, projected back to original reward scale
+pred_final = pred * np.std(rewards) + np.mean(rewards)
+
+trajs1_pd_test['reward_nn'] = pred_final
+
+print('total reward actual ', trajs1_pd_test['reward'].sum())
+print('total reward actual nn ', trajs1_pd_test['reward_nn'].sum())
 print('total reward for sarsa ', trajs1_pd_test['est_reward_sarsa'].sum())
 print('total reward for qlearning ', trajs1_pd_test['est_reward_qlearning'].sum())
 
