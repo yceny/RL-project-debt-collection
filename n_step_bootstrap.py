@@ -81,15 +81,16 @@ class epsilon_greedy(object):
         self.Q = Q
         self.epsilon = epsilon
         
-    def action_prob(self,state:int,action:int) -> float:
-        if self.action(state) == action:
-            return 1
+    def action_prob(self,state:int, action:int) -> float:
+        target_action = self.action(state)
+        if target_action == action:
+            return self.epsilon + self.probability / len(self.Q[state])
         else:
-            return 0
+            return self.probability / len(self.Q[state])
         
-    def select_action(self, state:int) -> int:
+    def action(self, state:int) -> int:
         k_actions = len(self.Q[state])
-        probability = np.random.rand()
+        self.probability = np.random.rand()
         if probability < self.epsilon:
             select_greedy_action = np.argmax(self.Q[state,:])
             return select_greedy_action
@@ -104,6 +105,7 @@ def off_policy_n_step_sarsa(
     nA,
     n:int,
     alpha:float
+    epsilon:float
 ):
     """
     input:
@@ -114,6 +116,7 @@ def off_policy_n_step_sarsa(
         pi: evaluation target policy
         n: how many steps?
         alpha: learning rate
+        epsilon: epsilon for action selection
         initQ: initial Q values; np array shape of [nS,nA]
     ret:
         Q: $q_star$ function; numpy array shape of [nS,nA]
@@ -130,6 +133,7 @@ def off_policy_n_step_sarsa(
 
     Q = init_q(nS, nA, type="zeros")
     pi = GreedyPolicy(Q)
+    #pi = epsilon_greedy(Q, epsilon)
     
 
     for traj in trajs:
@@ -153,6 +157,7 @@ def off_policy_n_step_sarsa(
                 Q[traj[int(tau)][0], traj[int(tau)][1]] += alpha * rho * (G - Q[traj[int(tau)][0], traj[int(tau)][1]])
 
     pi = GreedyPolicy(Q)
+    #pi = epsilon_greedy(Q, epsilon)
 
 
     return Q, pi
