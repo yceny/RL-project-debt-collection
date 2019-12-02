@@ -88,9 +88,9 @@ class epsilon_greedy(object):
             return 0
         
     def select_action(self, state:int) -> int:
-        k_actions = len(self.Q[0])
+        k_actions = len(self.Q[state])
         probability = np.random.rand()
-        if probability >= self.epsilon:
+        if probability < self.epsilon:
             select_greedy_action = np.argmax(self.Q[state,:])
             return select_greedy_action
         select_action_randomly = np.random.choice(k_actions)
