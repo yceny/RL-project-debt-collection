@@ -75,6 +75,26 @@ class GreedyPolicy(object):
 
     def action(self,state:int) -> int:
         return np.argmax(self._Q[state,:])
+    
+class epsilon_greedy(object):
+    def __init__(self, Q, epsilon):
+        self.Q = Q
+        self.epsilon = epsilon
+        
+    def action_prob(self,state:int,action:int) -> float:
+        if self.action(state) == action:
+            return 1
+        else:
+            return 0
+        
+    def select_action(self, state:int) -> int:
+        k_actions = len(self.Q[0])
+        probability = np.random.rand()
+        if probability >= self.epsilon:
+            select_greedy_action = np.argmax(self.Q[state,:])
+            return select_greedy_action
+        select_action_randomly = np.random.choice(k_actions)
+        return select_action_randomly
 
 def off_policy_n_step_sarsa(
     gamma:float,
