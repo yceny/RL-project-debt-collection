@@ -105,7 +105,7 @@ def off_policy_n_step_sarsa(
     nA,
     n:int,
     alpha:float
-    epsilon:float
+    epsilon = 0.8
 ):
     """
     input:
