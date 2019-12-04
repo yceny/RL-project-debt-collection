@@ -9,7 +9,7 @@ from keras.layers import Dense, Conv1D, Flatten, Dropout, BatchNormalization, Ac
 from keras.models import Sequential
 from keras.models import load_model
 from keras.optimizers import SGD, Adadelta
-from keras.losses import mean_squared_error 
+from keras.losses import mean_squared_error
 
 class RandomPolicy(Policy):
     def __init__(self,nA,p=None):
@@ -77,24 +77,22 @@ all_states2 = trajs2_pd_train[['state_done', 'cumulative_overdue_early_differenc
 
 ################################################################# all ################################################################################
 
-
 loan_ids = trajs_train['loan_id'].drop_duplicates().values.tolist()
 
-
 for loan_id in loan_ids:
-    df = trajs_train.loc[trajs_train['loan_id'] == loan_id]
-    states = df[['state_done', 'cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation']].values.tolist()
-    states.insert(0,states[0])
-    states_index = []
-    for s in states:
-        states_index.append(all_states.index(s))
-    actions = df['action_num'].values.tolist()
-    rewards = df['reward'].values.tolist()
+    df1 = trajs_train.loc[trajs_train['loan_id'] == loan_id]
+    installments = df1['installment'].drop_duplicates().values.tolist()
+    for installment in installments:
+        states = df1.loc[df1['installment'] == installment][['state_done', 'cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation']].values.tolist()
+        states.insert(0,states[0])
+        states_index = []
+        for s in states:
+            states_index.append(all_states.index(s))
+        actions = df1['action_num'].values.tolist()
+        rewards = df1['reward'].values.tolist()
 
-    traj = list(zip(states_index[:-1], actions, rewards, states_index[1:]))
-    trajectory.append(traj)
-
-
+        traj = list(zip(states_index[:-1],actions, rewards, states_index[1:]))
+        trajectory.append(traj)
 
 
 nA = trajs_train['action_num'].unique().shape[0]
@@ -104,7 +102,7 @@ nS = trajs_train[['state_done', 'cumulative_overdue_early_difference','gender','
 # epsilons = [0.9, 0.8]
 
 gamma = 0.7
-epsilon = 0.8
+epsilon = 0.9
 
 behavior_policy = RandomPolicy(nA)
 sarsa_Q_star_est, sarsa_reward, sarsa_pi_star_est = nsarsa(gamma,trajectory,behavior_policy, nS = nS, nA = nA, n=1,alpha=0.005, epsilon = epsilon)
@@ -113,7 +111,7 @@ opt_action_sarsa = []
 for i in range(sarsa_Q_star_est.shape[0]):
     opt_action_sarsa.append(np.argmax(sarsa_Q_star_est[i,:]))
 
-df_final = trajs_train[['state_done','cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation']].drop_duplicates()
+df_final = trajs_train[['state_done', 'cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation']].drop_duplicates()
 df_final['opt_action_sarsa'] = opt_action_sarsa
 
 qlearning_star_est, qLearning_reward = qlearning(trajectory, nS, nA, alpha = 0.4, gamma = gamma, epsilon = epsilon)
@@ -255,7 +253,7 @@ pred_final = pred * reward_std + reward_mean
 
 trajs_test['est_reward_random'] = pred_final
 
-# trajs_test.to_csv('res.csv')
+# trajs_test.to_csv('res_installment.csv')
 
 print('############################## result for all ##################################################')
 print('total reward actual ', trajs_test['reward'].sum())
@@ -272,17 +270,19 @@ print('total reward for random action ', trajs_test['est_reward_random'].sum())
 # loan_ids1 = trajs1_pd_train['loan_id'].drop_duplicates().values.tolist()
 
 # for loan_id in loan_ids1:
-#     df1 = trajs1_pd_train.loc[trajs1_pd_train['loan_id'] == loan_id]
-#     states = df1[['state_done', 'cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation']].values.tolist()
-#     states.insert(0,states[0])
-#     states_index = []
-#     for s in states:
-#         states_index.append(all_states1.index(s))
-#     actions = df1['action_num'].values.tolist()
-#     rewards = df1['reward'].values.tolist()
+#     df1 = trajs1_pd_train.loc[trajs1_pd['loan_id'] == loan_id]
+#     installments = df1['installment'].drop_duplicates().values.tolist()
+#     for installment in installments:
+#         states = df1.loc[df1['installment'] == installment][['state_done', 'cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation']].values.tolist()
+#         states.insert(0,states[0])
+#         states_index = []
+#         for s in states:
+#             states_index.append(all_states1.index(s))
+#         actions = df1['action_num'].values.tolist()
+#         rewards = df1['reward'].values.tolist()
 
-#     traj = list(zip(states_index[:-1],actions, rewards, states_index[1:]))
-#     trajs1.append(traj)
+#         traj = list(zip(states_index[:-1],actions, rewards, states_index[1:]))
+#         trajs1.append(traj)
 
 
 # nA1 = trajs1_pd_train['action_num'].unique().shape[0]
@@ -307,7 +307,7 @@ print('total reward for random action ', trajs_test['est_reward_random'].sum())
 
 # df1_final['opt_action_qlearning'] = opt_action1_qlearning
 
-# trajs1_pd_test = trajs1_pd_test.merge(df1_final, on = ['loan_id', 'installment', 'state_done', 'cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation'], how = 'left')
+# trajs1_pd_test = trajs1_pd_test.merge(df1_final, on = ['loan_id', 'installment','state_done', 'cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation'], how = 'left')
 # print('shape of test data ', trajs1_pd_test.shape)
 
 # trajs1_pd_test = trajs1_pd_test.dropna(how='any')
@@ -439,7 +439,7 @@ print('total reward for random action ', trajs_test['est_reward_random'].sum())
 
 # trajs1_pd_test['est_reward_random'] = pred_final
 
-# trajs1_pd_test.to_csv('res_group1.csv')
+# trajs1_pd_test.to_csv('res_group1_installment.csv')
 
 # print('############################## result for group 1 ##################################################')
 # print('total reward actual ', trajs1_pd_test['reward'].sum())
@@ -456,17 +456,19 @@ print('total reward for random action ', trajs_test['est_reward_random'].sum())
 # loan_ids2 = trajs2_pd_train['loan_id'].drop_duplicates().values.tolist()
 
 # for loan_id in loan_ids2:
-#     df2 = trajs2_pd_train.loc[trajs2_pd_train['loan_id'] == loan_id]
-#     states = df2[['state_done', 'cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation']].values.tolist()
-#     states.insert(0,states[0])
-#     states_index = []
-#     for s in states:
-#         states_index.append(all_states2.index(s))
-#     actions = df2['action_num'].values.tolist()
-#     rewards = df2['reward'].values.tolist()
+#     df2 = trajs2_pd_train.loc[trajs2_pd['loan_id'] == loan_id]
+#     installments = df2['installment'].drop_duplicates().values.tolist()
+#     for installment in installments:
+#         states = df2.loc[df2['installment'] == installment][['state_done', 'cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation']].values.tolist()
+#         states.insert(0,states[0])
+#         states_index = []
+#         for s in states:
+#             states_index.append(all_states2.index(s))
+#         actions = df2['action_num'].values.tolist()
+#         rewards = df2['reward'].values.tolist()
 
-#     traj = list(zip(states_index[:-1],actions, rewards, states_index[1:]))
-#     trajs2.append(traj)
+#         traj = list(zip(states_index[:-1],actions, rewards, states_index[1:]))
+#         trajs2.append(traj)
 
 # nA2 = trajs2_pd_train['action_num'].unique().shape[0]
 # nS2 = trajs2_pd_train[['state_done', 'cumulative_overdue_early_difference','gender','amount','num_loan','duration','year_ratio','diff_city','marriage','kids','month_in','housing','edu','motivation']].drop_duplicates().shape[0]
@@ -621,7 +623,7 @@ print('total reward for random action ', trajs_test['est_reward_random'].sum())
 
 # trajs2_pd_test['est_reward_random'] = pred_final
 
-# trajs2_pd_test.to_csv('res_group2.csv')
+# trajs2_pd_test.to_csv('res_group2_installment.csv')
 
 # print('############################## result for group 2 ##################################################')
 # print('total reward actual ', trajs2_pd_test['reward'].sum())

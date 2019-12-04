@@ -50,14 +50,14 @@ def qlearning(trajs, n_states, n_actions, alpha, gamma, epsilon):
     # env = gym.make('Taxi-v2')
     # n_states, n_actions = env.observation_space.n, env.action_space.n
 
-    Q = init_q(n_states, n_actions, type="ones")
+    Q = init_q(n_states, n_actions, type="zeros")
     timestep_reward = []
     # for episode in range(episodes):
     for traj in trajs:
         s = traj[0][0]
         a = epsilon_greedy(Q, epsilon, n_actions, s)
         total_reward = 0
-        done = False
+        # done = False
     
         for t in range(len(traj)):
         # while t < max_steps:
@@ -68,18 +68,9 @@ def qlearning(trajs, n_states, n_actions, alpha, gamma, epsilon):
             a_ = np.argmax(Q[s_, :])
             Q[s, a] += alpha * ( reward + (gamma * Q[s_, a_]) - Q[s, a] )
             s, a = s_, a_
-            timestep_reward.append(total_reward)
 
-    return timestep_reward
+        timestep_reward.append(total_reward)
 
+    return Q, timestep_reward
 
-if __name__ =="__main__":
-    alpha = 0.4
-    gamma = 0.999
-    epsilon = 0.9
-    episodes = 10000
-    max_steps = 2500
-    # n_tests = 2
-    timestep_reward = qlearning(alpha, gamma, epsilon, episodes, max_steps)
-    print(timestep_reward)
 

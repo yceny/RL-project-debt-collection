@@ -75,7 +75,7 @@ class GreedyPolicy(object):
 
     def action(self,state:int) -> int:
         return np.argmax(self._Q[state,:])
-    
+
 class epsilon_greedy(object):
     def __init__(self, Q, epsilon):
         self.Q = Q
@@ -104,8 +104,8 @@ def off_policy_n_step_sarsa(
     nS,
     nA,
     n:int,
-    alpha:float
-    epsilon = 0.8
+    alpha:float,
+    epsilon = 0.9
 ):
     """
     input:
@@ -116,7 +116,6 @@ def off_policy_n_step_sarsa(
         pi: evaluation target policy
         n: how many steps?
         alpha: learning rate
-        epsilon: epsilon for action selection
         initQ: initial Q values; np array shape of [nS,nA]
     ret:
         Q: $q_star$ function; numpy array shape of [nS,nA]
@@ -128,20 +127,18 @@ def off_policy_n_step_sarsa(
     # sampling (Hint: Sutton Book p. 149)
     #####################
 
-    print('# of states ', nS)
-    print('# of actions ', nA)
 
     Q = init_q(nS, nA, type="zeros")
-    pi = GreedyPolicy(Q)
-    #pi = epsilon_greedy(Q, epsilon)
-    
+    # pi = GreedyPolicy(Q)
+    pi = epsilon_greedy(Q, epsilon)
+    timestep_reward = []
 
     for traj in trajs:
-        print('trajectory is ', traj)
         T = len(traj)
+        total_reward = 0
         for t in range(T):
             tau = t - n + 1
-            print('tau is ', tau)
+            total_reward += traj[t][2]
             if tau >= 0:
                 rho = 1
                 # for i in range(tau, min(tau+n-1, T-1)):
@@ -151,13 +148,14 @@ def off_policy_n_step_sarsa(
                 for i in range(tau, min(tau+n, T)):
                     G += np.power(gamma, i-tau)*traj[i][2]
                 if tau + n < T:
-                    print('tau + n is ', tau + n)
                     G += np.power(gamma, n) * Q[traj[int(tau+n)][0], traj[int(tau+n)][1]]
 
                 Q[traj[int(tau)][0], traj[int(tau)][1]] += alpha * rho * (G - Q[traj[int(tau)][0], traj[int(tau)][1]])
 
-    pi = GreedyPolicy(Q)
-    #pi = epsilon_greedy(Q, epsilon)
+        timestep_reward.append(total_reward)
+
+    # pi = GreedyPolicy(Q)
+    pi = epsilon_greedy(Q, epsilon)
 
 
-    return Q, pi
+    return Q, timestep_reward, pi
