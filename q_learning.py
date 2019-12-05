@@ -3,13 +3,8 @@ import numpy as np
 import time
 
 """
-Qlearning is an off policy learning python implementation.
-This is a python implementation of the qlearning algorithm in the Sutton and
-Barto's book on RL. It's called SARSA because - (state, action, reward, state,
-action). The only difference between SARSA and Qlearning is that SARSA takes the
-next action based on the current policy while qlearning takes the action with
-maximum utility of next state.
-Using the simplest gym environment for brevity: https://gym.openai.com/envs/FrozenLake-v0/
+modified from the following reference link
+https://towardsdatascience.com/reinforcement-learning-temporal-difference-sarsa-q-learning-expected-sarsa-on-python-9fecfda7467e
 """
 
 def init_q(s, a, type="ones"):
